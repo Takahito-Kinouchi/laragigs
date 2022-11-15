@@ -1,9 +1,10 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ListingController;
-use Database\Factories\ListingFactory;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,7 +41,7 @@ Route::get('/listings/manage', [ListingController::class, 'manage'])->middleware
 //Single listing
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 
-//Show register/create form
+//Show register form
 Route::get('/register', [UserController::class, 'create'])->middleware('guest');
 
 //create new user
@@ -54,3 +55,27 @@ Route::get('/login', [UserController::class, 'login'])->name('login')->middlewar
 
 // log in user
 Route::post('/users/authenticate', [UserController::class, 'authenticate']);
+
+//notify verification
+Route::get('/email/verify', function(){
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+//receive verification
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+
+    return redirect('/');
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
+//resend notification
+Route::post('/email/verification-notification', function (Request $request){
+    $request->user()->sendEmailVerificationNotification();
+
+    return back()->with('message', 'Verification link sent!');
+})->middleware(['auth', 'throttle:6, 1'])->name('verification.send');
+
+//confirmation before post
+Route::get('/confirm', function ($id) {
+
+});
